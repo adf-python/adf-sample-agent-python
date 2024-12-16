@@ -44,7 +44,6 @@ dependencies {
     implementation 'com.github.roborescue:adf-core-java:master-SNAPSHOT'
     implementation 'com.github.adf-python:adf-core-python:master-SNAPSHOT'
 
-    implementation 'org.locationtech.jts:jts-core:1.20.0'
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
