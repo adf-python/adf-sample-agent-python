@@ -9,15 +9,17 @@ from adf_core_python.core.component.module.algorithm.clustering import Clusterin
 from adf_core_python.core.component.module.algorithm.path_planning import PathPlanning
 from adf_core_python.core.component.module.complex.road_detector import RoadDetector
 from adf_core_python.core.logger.logger import get_agent_logger
-from rcrs_core.connection.URN import Entity as EntityURN
-from rcrs_core.entities.ambulanceTeam import AmbulanceTeam
-from rcrs_core.entities.area import Area
-from rcrs_core.entities.civilian import Civilian
-from rcrs_core.entities.entity import Entity
-from rcrs_core.entities.fireBrigade import FireBrigade
-from rcrs_core.entities.human import Human
-from rcrs_core.entities.policeForce import PoliceForce
-from rcrs_core.worldmodel.entityID import EntityID
+from rcrscore.entities import (
+    AmbulanceTeam,
+    Area,
+    Civilian,
+    Entity,
+    EntityID,
+    FireBrigade,
+    Human,
+    PoliceForce,
+)
+from rcrscore.urn import EntityURN
 
 
 class SampleRoadDetector(RoadDetector):
@@ -57,7 +59,10 @@ class SampleRoadDetector(RoadDetector):
         )
 
     def calculate(self) -> RoadDetector:
-        position_id: EntityID = self._agent_info.get_position_entity_id()
+        position_id = self._agent_info.get_position_entity_id()
+        if position_id is None:
+            return self
+
         current_position: Area = cast(Area, self._world_info.get_entity(position_id))
         self._opened_areas.add(current_position)
 
@@ -75,12 +80,12 @@ class SampleRoadDetector(RoadDetector):
             nearest_target: Area = min(
                 current_targets,
                 key=lambda target: self._world_info.get_distance(
-                    position_id, target.get_id()
+                    position_id, target.get_entity_id()
                 ),
             )
 
             path: list[EntityID] = self._path_planning.get_path(
-                position_id, nearest_target.get_id()
+                position_id, nearest_target.get_entity_id()
             )
             if path:
                 self._result = path[-1]
@@ -101,9 +106,11 @@ class SampleRoadDetector(RoadDetector):
         ):
             if self._is_valid_human(entity):
                 human: Human = cast(Human, entity)
-                target_areas.add(
-                    cast(Area, self._world_info.get_entity(human.get_position()))
-                )
+                position_entity_id = human.get_position()
+                if position_entity_id is not None:
+                    target_areas.add(
+                        cast(Area, self._world_info.get_entity(position_entity_id))
+                    )
 
         if len(target_areas) == 0:
             for entity in self._world_info.get_entities_of_types([Area]):
@@ -132,12 +139,14 @@ class SampleRoadDetector(RoadDetector):
             return False
         if not human.get_position():
             return False
-        if human.damage is None or human.damage == 0:
+        if human.get_damage() is None or human.get_damage() == 0:
             return False
         if human.get_buriedness() is not None:
             return False
-
-        position: Optional[Entity] = self._world_info.get_entity(human.get_position())
+        position_entity_id = human.get_position()
+        if position_entity_id is None:
+            return False
+        position: Optional[Entity] = self._world_info.get_entity(position_entity_id)
         if position is None:
             return False
 
