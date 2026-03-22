@@ -3,7 +3,7 @@
  */
 package org.example;
 
-import adf_core_python.gateway.Gateway;
+import adf_core_python.core.gateway.Gateway;
 
 public class App {
     public static void main(String[] args) {
